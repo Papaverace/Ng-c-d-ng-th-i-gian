@@ -519,6 +519,23 @@ function buildLayer(){
   for(const px of [48,216]){x.fillStyle='#2a2a2a';for(let k=0;k<4;k++)x.fillRect(px+2+k*3,354,1,12);x.fillStyle='#8a5a2b';for(let k=0;k<4;k++)x.fillRect(px+2+k*3,364,2,4);}
   put(PROP.cat,104,424);put(PROP.cat,118,424);put(PROP.cat,111,419);put(PROP.cat,240,424);
   x.fillStyle='#555';x.fillRect(110,352,1,8);put(SPR.den,110,370);
+  // Tầng sâu: make maze walls read as solid blocks and the walkable path as packed earth
+  {
+    const z=ZONES.find(q=>q.id==='sau'),inZ=(cc,rr)=>cc>=z.x&&cc<z.x+z.w&&rr>=z.y&&rr<z.y+z.h;
+    const isWall=(cc,rr)=>rr<0||rr>=MH||cc<0||cc>=MW||G0[rr][cc]==='#';
+    for(let rr=z.y;rr<z.y+z.h;rr++)for(let cc=z.x;cc<z.x+z.w;cc++){
+      const px=cc*T,py=rr*T;
+      if(isWall(cc,rr)){
+        x.fillStyle='#0d0805';x.fillRect(px,py,T,T);
+        x.fillStyle='#2b1a0e';if(!isWall(cc,rr-1))x.fillRect(px,py,T,2);if(!isWall(cc-1,rr))x.fillRect(px,py,2,T);if(!isWall(cc+1,rr))x.fillRect(px+T-2,py,2,T);
+        if(!isWall(cc,rr+1)){x.fillStyle='#5a3219';x.fillRect(px,py+T-6,T,6);x.fillStyle='#7e4826';x.fillRect(px,py+T-6,T,1);x.fillStyle='#3a2112';for(let k=1;k<T;k+=4)x.fillRect(px+k,py+T-5,1,5);}
+      }else if(inZ(cc,rr)){
+        x.fillStyle='rgba(176,124,74,.22)';x.fillRect(px,py,T,T);
+        x.fillStyle='rgba(0,0,0,.28)';if(isWall(cc,rr-1))x.fillRect(px,py,T,3);if(isWall(cc-1,rr))x.fillRect(px,py,2,T);if(isWall(cc+1,rr))x.fillRect(px+T-2,py,2,T);
+        x.fillStyle='rgba(214,170,110,.35)';x.fillRect(px+5+(cc*7+rr*3)%6,py+6+(cc*5+rr)%6,1,1);
+      }
+    }
+  }
   return {c,tips};
 }
 
@@ -1099,7 +1116,7 @@ function updatePlay(dt){
   if(here==='E'&&!S.fade){
     say([['Chị Út','Mai! Trực thăng địch tới rồi! Em núp sau ụ đất, chờ chúng bay ngang rồi hãy bắn. Nhớ: giữ mình trước, rồi mới giữ làng!'],[NAME,'Em sợ lắm, chị Út… Nhưng em sẽ không bỏ chạy đâu!']],()=>{S.mode='trans';S.fade={t:0,done:false,to:startShoot};});return;}
   // seen tiles
-  const pc=Math.floor(p.x/T),pr=Math.floor(p.y/T),rad=S.zone&&S.zone.id==='sau'?3:5;
+  const pc=Math.floor(p.x/T),pr=Math.floor(p.y/T),rad=S.zone&&S.zone.id==='sau'?4:5;
   for(let j=-rad;j<=rad;j++)for(let i=-rad;i<=rad;i++){const c=pc+i,r=pr+j;if(c>=0&&r>=0&&c<MW&&r<MH&&i*i+j*j<=rad*rad&&!S.seen[r*MW+c]){S.seen[r*MW+c]=1;S.miniDirty=true;}}
   // nearest
   S.near=null;let best=22;
@@ -1200,7 +1217,7 @@ function drawWorld(extraDraw,extraLights){
   const fixed=LIGHTS.map(l=>({x:l.x-cx,y:l.y-cy,r:l.r*fl}));
   const beams=BEAMS.map(b=>({x:b.x-cx,y:b.y1-14-cy,r:30}));
   const inSau=S.zone&&S.zone.id==='sau'&&!extraDraw;
-  const targetA=inSau?.9:.5,targetR=inSau?(has("den")?68:30):84;
+  const targetA=inSau?.86:.5,targetR=inSau?(has("den")?92:46):84;
   S.darkA+=(targetA-S.darkA)*.06;S.lightR+=(targetR-S.lightR)*.06;
   const pl=extraDraw?[]:[{x:p.x-cx,y:p.y-16-cy,r:S.lightR*fl}];
   drawDark([...pl,...fixed,...beams,...(extraLights||[])],S.darkA);
